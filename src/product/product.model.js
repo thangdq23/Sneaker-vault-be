@@ -44,6 +44,42 @@ const productSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    isNewProduct: {
+      type: Boolean,
+      default: false,
+    },
+    isSale: {
+      type: Boolean,
+      default: false,
+    },
+    salePrice: {
+      type: Number,
+      default: null,
+      min: 0,
+      validate: {
+        validator: function (value) {
+          if (!this.isSale) return true;
+          return value !== null && value !== undefined && value >= 0;
+        },
+        message: "salePrice is required and must be >= 0 when isSale is true",
+      },
+    },
+    discountPercent: {
+      type: Number,
+      default: null,
+      min: 0,
+      max: 100,
+      validate: {
+        validator: function (value) {
+          if (!this.isSale) return true;
+          return (
+            value !== null && value !== undefined && value >= 0 && value <= 100
+          );
+        },
+        message:
+          "discountPercent is required and must be between 0 and 100 when isSale is true",
+      },
+    },
   },
   { timestamps: true },
 );

@@ -63,6 +63,12 @@ export const createProduct = async (req, res) => {
     if (error.code === 11000 && error.keyPattern.name) {
       return res.status(409).json({ error: "Product name already exists." });
     }
+    if (error.name === "ValidationError") {
+      const messages = Object.values(error.errors).map((err) => err.message);
+      return res
+        .status(400)
+        .json({ error: "Validation failed", details: messages });
+    }
     res.status(500).json({ error: "Failed to create product." });
   }
 };
@@ -79,6 +85,12 @@ export const updateProduct = async (req, res) => {
     res.json(product);
   } catch (error) {
     console.error(error);
+    if (error.name === "ValidationError") {
+      const messages = Object.values(error.errors).map((err) => err.message);
+      return res
+        .status(400)
+        .json({ error: "Validation failed", details: messages });
+    }
     res.status(500).json({ error: "Failed to update product." });
   }
 };
