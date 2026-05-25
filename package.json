@@ -9,10 +9,10 @@
   "license": "MIT",
   "author": "thangdq",
   "type": "module",
-  "main": "src/server.js",
+  "main": "app.js",
   "scripts": {
-    "dev": "nodemon src/server.js",
-    "start": "node src/server.js"
+    "dev": "nodemon app.js",
+    "start": "node app.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
