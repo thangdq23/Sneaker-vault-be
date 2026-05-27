@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
+import { configEnv } from "../configs/configenv.js";
 
-const JWT_SECRET = process.env.JWT_SECRET || "sneaker-vault-secret";
+const JWT_SECRET = configEnv.JWT_SECRET;
 
 export const authenticateToken = (req, res, next) => {
   const authHeader = req.headers.authorization;

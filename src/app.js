@@ -1,29 +1,24 @@
-import express from "express";
 import cors from "cors";
-
-import authRoutes from "./auth/auth.route.js";
-import productRoutes from "./product/product.route.js";
-import cartRoutes from "./cart/cart.route.js";
+import express from "express";
+import connectDB from "./shared/configs/db.js";
+import router from "./routes/index.js";
+import { configEnv } from "./shared/configs/configenv.js";
 
 const app = express();
-
-const allowedOrigins = process.env.CORS_ORIGIN;
-const corsOptions = allowedOrigins
-  ? { origin: allowedOrigins.split(","), credentials: true }
-  : {};
-
-app.use(cors(corsOptions));
-
+app.use(cors());
 app.use(express.json());
 
-app.use("/api/auth", authRoutes);
-app.use("/api/products", productRoutes);
-app.use("/api/cart", cartRoutes);
-
+app.use("/api", router);
 app.get("/", (req, res) => {
   res.json({
     message: "Sneaker Vault API is running.",
   });
+});
+
+connectDB();
+
+app.listen(configEnv.PORT, () => {
+  console.log(`Server running on http://localhost:${configEnv.PORT}`);
 });
 
 export default app;
