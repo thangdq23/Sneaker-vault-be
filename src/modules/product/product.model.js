@@ -60,26 +60,25 @@ const productSchema = new mongoose.Schema(
         message: "salePrice is required and must be >= 0 when isSale is true",
       },
     },
-    discountPercent: {
-      type: Number,
-      default: null,
-      min: 0,
-      max: 100,
-      validate: {
-        validator: function (value) {
-          if (!this.isSale) return true;
-          return (
-            value !== null && value !== undefined && value >= 0 && value <= 100
-          );
-        },
-        message:
-          "discountPercent is required and must be between 0 and 100 when isSale is true",
-      },
-    },
   },
-  { timestamps: true },
+  { 
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
+  },
 );
+
+productSchema.virtual("formattedPrice").get(function () {
+  if (this.price === null || this.price === undefined) return "0 đ";
+  return `${this.price.toLocaleString("vi-VN")} đ`;
+});
+
+productSchema.virtual("formattedSalePrice").get(function () {
+  if (this.salePrice === null || this.salePrice === undefined) return null;
+  return `${this.salePrice.toLocaleString("vi-VN")} đ`;
+});
 
 const Product =
   mongoose.models.Product || mongoose.model("Product", productSchema);
 export default Product;
+
