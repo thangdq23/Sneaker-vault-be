@@ -4,6 +4,7 @@ import {
   getProductById,
   createProduct,
   updateProduct,
+  updateProductSizeStock,
   deleteProduct,
 } from "./product.controller.js";
 import { authenticateToken, authorizeRole } from "../../shared/middlewares/auth.middleware.js";
@@ -11,6 +12,7 @@ import { validateRequest } from "../../shared/middlewares/validate.middleware.js
 import {
   createProductSchema,
   updateProductSchema,
+  updateProductSizeStockSchema,
   getProductsQuerySchema,
 } from "./product.schema.js";
 
@@ -31,6 +33,13 @@ routerProduct.put(
   authorizeRole("admin"),
   validateRequest(updateProductSchema),
   updateProduct,
+);
+routerProduct.patch(
+  "/:id/sizes",
+  authenticateToken,
+  authorizeRole("admin"),
+  validateRequest(updateProductSizeStockSchema),
+  updateProductSizeStock,
 );
 routerProduct.delete(
   "/:id",

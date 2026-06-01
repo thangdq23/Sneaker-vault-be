@@ -7,7 +7,14 @@ const productShape = z.object({
   price: z.number().min(0, "Price must be at least 0 VNĐ"),
   description: z.string().trim().optional(),
   images: z.array(z.string()).optional(),
-  sizes: z.array(z.number()).optional(),
+  sizes: z
+    .array(
+      z.object({
+        size: z.number("Size must be a number"),
+        stock: z.number().min(0, "Stock for size must be at least 0"),
+      })
+    )
+    .optional(),
   stock: z.number().min(0, "Stock must be at least 0").optional(),
   isNewProduct: z.boolean().optional(),
   isSale: z.boolean().optional(),
@@ -62,5 +69,12 @@ export const getProductsQuerySchema = {
     page: z.coerce.number().int().min(1).optional(),
     limit: z.coerce.number().int().min(1).optional(),
     sort: z.string().optional(),
+  }),
+};
+
+export const updateProductSizeStockSchema = {
+  body: z.object({
+    size: z.number("Size must be a number"),
+    stock: z.number().min(0, "Stock must be at least 0"),
   }),
 };

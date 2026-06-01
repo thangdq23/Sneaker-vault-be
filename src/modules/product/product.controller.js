@@ -52,18 +52,41 @@ export const createProduct = async (req, res, next) => {
 
 export const updateProduct = async (req, res, next) => {
   try {
-    const product = await Product.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-      runValidators: true,
-    });
+    const product = await Product.findById(req.params.id);
     if (!product) {
       return createError(res, 404, "Product not found.");
     }
+    product.set(req.body);
+    await product.save();
     res.json(product);
   } catch (error) {
     if (error.code === 11000 && error.keyPattern.name) {
       return createError(res, 409, "Product name already exists.");
     }
+    next(error);
+  }
+};
+
+export const updateProductSizeStock = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { size, stock } = req.body;
+
+    const product = await Product.findById(id);
+    if (!product) {
+      return createError(res, 404, "Product not found.");
+    }
+
+    const sizeObj = product.sizes.find((s) => s.size === size);
+    if (!sizeObj) {
+      product.sizes.push({ size, stock });
+    } else {
+      sizeObj.stock = stock;
+    }
+
+    await product.save();
+    res.json(product);
+  } catch (error) {
     next(error);
   }
 };

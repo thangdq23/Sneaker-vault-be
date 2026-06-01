@@ -21,18 +21,34 @@ export const createOrder = async (req, res, next) => {
     for (const item of cart.items) {
       const product = item.product;
       if (!product) {
-        return createError(res, 404, "One of the products in your cart no longer exists.");
-      }
-
-      if (product.stock < item.quantity) {
         return createError(
           res,
-          400,
-          `Insufficient stock for product "${product.name}". Only ${product.stock} items left in stock.`,
+          404,
+          "One of the products in your cart no longer exists.",
         );
       }
 
-      const price = product.isSale && product.salePrice !== null ? product.salePrice : product.price;
+      const sizeItem = product.sizes.find((s) => s.size === item.size);
+      if (!sizeItem) {
+        return createError(
+          res,
+          400,
+          `Product "${product.name}" does not support size ${item.size}.`,
+        );
+      }
+
+      if (sizeItem.stock < item.quantity) {
+        return createError(
+          res,
+          400,
+          `Insufficient stock for product "${product.name}" (size ${item.size}). Only ${sizeItem.stock} items left in stock.`,
+        );
+      }
+
+      const price =
+        product.isSale && product.salePrice !== null
+          ? product.salePrice
+          : product.price;
       totalAmount += price * item.quantity;
 
       orderItems.push({
@@ -53,11 +69,16 @@ export const createOrder = async (req, res, next) => {
       paymentMethod,
     });
 
-    // Update product stock
     for (const item of cart.items) {
-      await Product.findByIdAndUpdate(item.product._id, {
-        $inc: { stock: -item.quantity },
-      });
+      await Product.updateOne(
+        { _id: item.product._id, "sizes.size": item.size },
+        {
+          $inc: {
+            "sizes.$.stock": -item.quantity,
+            stock: -item.quantity,
+          },
+        },
+      );
     }
 
     // Clear cart
@@ -95,7 +116,6 @@ export const getOrderById = async (req, res, next) => {
       return createError(res, 404, "Order not found.");
     }
 
-    // Check permissions: owner or admin
     if (order.user.toString() !== req.user.id && req.user.role !== "admin") {
       return createError(res, 403, "Access denied. You do not own this order.");
     }
