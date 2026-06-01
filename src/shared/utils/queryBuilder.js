@@ -105,6 +105,18 @@ price: {
 function applyFilter(key, value, conditional) {
   if (value === null || value === "") return;
 
+  if (typeof value === "string" && value.includes(",")) {
+    const arrayValues = value.split(",").map(val => isNaN(val) ? val : Number(val));
+    conditional[key] = { $in: arrayValues };
+    return;
+  }
+
+  if (Array.isArray(value)) {
+    const arrayValues = value.map(val => isNaN(val) ? val : Number(val));
+    conditional[key] = { $in: arrayValues };
+    return;
+  }
+
   const matchRange = key.match(/(From|To|Min|Max)$/);
 
   if (matchRange) {

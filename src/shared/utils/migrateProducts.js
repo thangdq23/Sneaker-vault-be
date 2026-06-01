@@ -2,7 +2,6 @@ import Product from "../../modules/product/product.model.js";
 
 export const migrateProductSizes = async () => {
   try {
-    console.log("Checking if any products need size schema migration...");
 
     const legacyProducts = await Product.find({
       $or: [
@@ -13,7 +12,6 @@ export const migrateProductSizes = async () => {
     });
 
     if (legacyProducts.length === 0) {
-      console.log("No legacy products found. Schema is up to date.");
       return;
     }
 
