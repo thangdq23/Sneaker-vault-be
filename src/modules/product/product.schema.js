@@ -2,6 +2,7 @@ import { z } from "zod";
 
 const productShape = z.object({
   name: z.string().trim().min(1, "Product name is required"),
+  sku: z.string().trim().optional(),
   brand: z.string().trim().optional(),
   category: z.string().trim().optional(),
   price: z.number().min(0, "Price must be at least 0 VNĐ"),

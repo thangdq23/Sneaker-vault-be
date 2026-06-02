@@ -43,8 +43,13 @@ export const createProduct = async (req, res, next) => {
     const product = await Product.create(req.body);
     res.status(201).json(product);
   } catch (error) {
-    if (error.code === 11000 && error.keyPattern.name) {
-      return createError(res, 409, "Product name already exists.");
+    if (error.code === 11000) {
+      if (error.keyPattern.name) {
+        return createError(res, 409, "Product name already exists.");
+      }
+      if (error.keyPattern.sku) {
+        return createError(res, 409, "SKU already exists.");
+      }
     }
     next(error);
   }
@@ -60,8 +65,13 @@ export const updateProduct = async (req, res, next) => {
     await product.save();
     res.json(product);
   } catch (error) {
-    if (error.code === 11000 && error.keyPattern.name) {
-      return createError(res, 409, "Product name already exists.");
+    if (error.code === 11000) {
+      if (error.keyPattern.name) {
+        return createError(res, 409, "Product name already exists.");
+      }
+      if (error.keyPattern.sku) {
+        return createError(res, 409, "SKU already exists.");
+      }
     }
     next(error);
   }

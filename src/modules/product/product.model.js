@@ -8,6 +8,12 @@ const productSchema = new mongoose.Schema(
       trim: true,
       unique: true,
     },
+    sku: {
+      type: String,
+      unique: true,
+      required: true,
+      trim: true,
+    },
     brand: {
       type: String,
       trim: true,
@@ -79,6 +85,26 @@ const productSchema = new mongoose.Schema(
     toObject: { virtuals: true }
   },
 );
+
+productSchema.pre("validate", async function () {
+  if (this.isNew && !this.sku) {
+    const lastProduct = await mongoose.model("Product").findOne(
+      { sku: /^SV\d+$/ },
+      { sku: 1 },
+      { sort: { sku: -1 } }
+    );
+    
+    let nextNumber = 1;
+    if (lastProduct && lastProduct.sku) {
+      const match = lastProduct.sku.match(/^SV(\d+)$/);
+      if (match) {
+        nextNumber = parseInt(match[1], 10) + 1;
+      }
+    }
+    
+    this.sku = `SV${String(nextNumber).padStart(3, "0")}`;
+  }
+});
 
 productSchema.pre("save", function () {
   if (this.isModified("sizes")) {

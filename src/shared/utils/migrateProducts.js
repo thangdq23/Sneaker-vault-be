@@ -54,3 +54,42 @@ export const migrateProductSizes = async () => {
     console.error("Error during product sizes migration:", error);
   }
 };
+
+export const migrateProductSkus = async () => {
+  try {
+    const productsWithoutSku = await Product.find({
+      $or: [{ sku: { $exists: false } }, { sku: null }, { sku: "" }],
+    });
+
+    if (productsWithoutSku.length === 0) {
+      return;
+    }
+
+    console.log(`Found ${productsWithoutSku.length} products without SKU to migrate.`);
+
+    for (let i = 0; i < productsWithoutSku.length; i++) {
+      const product = productsWithoutSku[i];
+      const lastProduct = await Product.findOne(
+        { sku: /^SV\d+$/ },
+        { sku: 1 },
+        { sort: { sku: -1 } }
+      );
+      
+      let nextNumber = 1;
+      if (lastProduct && lastProduct.sku) {
+        const match = lastProduct.sku.match(/^SV(\d+)$/);
+        if (match) {
+          nextNumber = parseInt(match[1], 10) + 1;
+        }
+      }
+      
+      product.sku = `SV${String(nextNumber).padStart(3, "0")}`;
+      await product.save({ validateBeforeSave: false });
+      console.log(`Migrated product "${product.name}" with auto-generated SKU: ${product.sku}`);
+    }
+
+    console.log("Product SKUs migration completed successfully.");
+  } catch (error) {
+    console.error("Error during product SKUs migration:", error);
+  }
+};
