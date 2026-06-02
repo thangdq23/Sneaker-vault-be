@@ -29,6 +29,12 @@ const orderSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+    orderCode: {
+      type: String,
+      unique: true,
+      required: true,
+      trim: true,
+    },
     items: {
       type: [orderItemSchema],
       required: true,
@@ -66,6 +72,26 @@ const orderSchema = new mongoose.Schema(
   },
   { timestamps: true },
 );
+
+orderSchema.pre("validate", async function () {
+  if (this.isNew && !this.orderCode) {
+    const lastOrder = await mongoose.model("Order").findOne(
+      { orderCode: /^SVORD\d+$/ },
+      { orderCode: 1 },
+      { sort: { orderCode: -1 } }
+    );
+    
+    let nextNumber = 1;
+    if (lastOrder && lastOrder.orderCode) {
+      const match = lastOrder.orderCode.match(/^SVORD(\d+)$/);
+      if (match) {
+        nextNumber = parseInt(match[1], 10) + 1;
+      }
+    }
+    
+    this.orderCode = `SVORD${String(nextNumber).padStart(3, "0")}`;
+  }
+});
 
 const Order = mongoose.models.Order || mongoose.model("Order", orderSchema);
 export default Order;
