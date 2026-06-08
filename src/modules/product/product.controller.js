@@ -1,6 +1,7 @@
 import Product from "./product.model.js";
 import { queryBuilder } from "../../shared/utils/queryBuilder.js";
 import createError from "../../shared/utils/createError.js";
+import cloudinary from "../../shared/configs/cloudinary.js";
 
 export const getProducts = async (req, res, next) => {
   try {
@@ -108,6 +109,32 @@ export const deleteProduct = async (req, res, next) => {
       return createError(res, 404, "Product not found.");
     }
     res.json({ message: "Product deleted successfully." });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const uploadProductImages = async (req, res, next) => {
+  try {
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ message: "Không tìm thấy tệp tin nào để tải lên." });
+    }
+
+    const uploadPromises = req.files.map((file) => {
+      return new Promise((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream(
+          { folder: "sneaker_vault/products" },
+          (error, result) => {
+            if (error) return reject(error);
+            resolve(result.secure_url);
+          }
+        );
+        uploadStream.end(file.buffer);
+      });
+    });
+
+    const urls = await Promise.all(uploadPromises);
+    res.json({ urls });
   } catch (error) {
     next(error);
   }

@@ -6,8 +6,10 @@ import {
   updateProduct,
   updateProductSizeStock,
   deleteProduct,
+  uploadProductImages,
 } from "./product.controller.js";
 import { authenticateToken, authorizeRole } from "../../shared/middlewares/auth.middleware.js";
+import { upload } from "../../shared/middlewares/upload.middleware.js";
 import { validateRequest } from "../../shared/middlewares/validate.middleware.js";
 import {
   createProductSchema,
@@ -46,6 +48,13 @@ routerProduct.delete(
   authenticateToken,
   authorizeRole("admin"),
   deleteProduct,
+);
+routerProduct.post(
+  "/upload",
+  authenticateToken,
+  authorizeRole("admin"),
+  upload.array("images", 10),
+  uploadProductImages
 );
 
 export default routerProduct;
