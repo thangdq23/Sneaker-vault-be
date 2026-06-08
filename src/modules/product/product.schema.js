@@ -68,6 +68,9 @@ export const getProductsQuerySchema = {
     page: z.coerce.number().int().min(1).optional(),
     limit: z.coerce.number().int().min(1).optional(),
     sort: z.string().optional(),
+    order: z.string().optional(),
+    stockMin: z.coerce.number().min(0).optional(),
+    stockMax: z.coerce.number().min(0).optional(),
   }),
 };
 
