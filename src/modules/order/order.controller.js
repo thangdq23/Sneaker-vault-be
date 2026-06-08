@@ -98,7 +98,7 @@ export const getMyOrders = async (req, res, next) => {
       { ...req.query, user: req.user.id },
       {
         populate: [
-          { path: "items.product", select: "name price images brand category" },
+          { path: "items.product", select: "name price images brand" },
         ],
       },
     );
@@ -148,7 +148,7 @@ export const getAllOrders = async (req, res, next) => {
   try {
     const result = await queryBuilder(Order, req.query, {
       populate: [
-        { path: "items.product", select: "name price images brand category" },
+        { path: "items.product", select: "name price images brand" },
         { path: "user", select: "name email" },
       ],
     });

@@ -18,7 +18,7 @@ const populateCart = async (cart) => {
   if (!cart) return null;
   await cart.populate({
     path: "items.product",
-    select: "name price images brand category isSale salePrice",
+    select: "name price images brand isSale salePrice",
   });
   return {
     ...cart.toObject(),

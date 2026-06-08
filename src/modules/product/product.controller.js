@@ -7,7 +7,7 @@ export const getProducts = async (req, res, next) => {
     const { minPrice, maxPrice, ...restQuery } = req.query;
     const queryParams = {
       ...restQuery,
-      searchFields: ["name", "brand", "category", "description"],
+      searchFields: ["name", "brand", "description"],
     };
     if (minPrice !== undefined) queryParams.priceMin = minPrice;
     if (maxPrice !== undefined) queryParams.priceMax = maxPrice;

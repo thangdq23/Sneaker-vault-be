@@ -4,7 +4,6 @@ const productShape = z.object({
   name: z.string().trim().min(1, "Product name is required"),
   sku: z.string().trim().optional(),
   brand: z.string().trim().optional(),
-  category: z.string().trim().optional(),
   price: z.number().min(0, "Price must be at least 0 VNĐ"),
   description: z.string().trim().optional(),
   images: z.array(z.string()).optional(),
@@ -63,7 +62,6 @@ export const updateProductSchema = {
 export const getProductsQuerySchema = {
   query: z.object({
     search: z.string().optional(),
-    category: z.string().optional(),
     brand: z.string().optional(),
     minPrice: z.coerce.number().min(0).optional(),
     maxPrice: z.coerce.number().min(0).optional(),

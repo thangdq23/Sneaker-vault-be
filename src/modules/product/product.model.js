@@ -19,11 +19,7 @@ const productSchema = new mongoose.Schema(
       trim: true,
       default: "Sneaker Vault",
     },
-    category: {
-      type: String,
-      trim: true,
-      default: "sneakers",
-    },
+
     price: {
       type: Number,
       required: true,
