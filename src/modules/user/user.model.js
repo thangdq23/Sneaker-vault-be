@@ -1,5 +1,27 @@
 import mongoose from "mongoose";
 
+const addressSchema = new mongoose.Schema({
+  receiverName: {
+    type: String,
+    required: true,
+    trim: true,
+  },
+  phone: {
+    type: String,
+    required: true,
+    trim: true,
+  },
+  addressDetail: {
+    type: String,
+    required: true,
+    trim: true,
+  },
+  isDefault: {
+    type: Boolean,
+    default: false,
+  },
+});
+
 const userSchema = new mongoose.Schema(
   {
     name: {
@@ -23,6 +45,18 @@ const userSchema = new mongoose.Schema(
       type: String,
       enum: ["user", "admin"],
       default: "user",
+    },
+    avatar: {
+      type: String,
+      default: "",
+    },
+    phone: {
+      type: String,
+      default: "",
+    },
+    addresses: {
+      type: [addressSchema],
+      default: [],
     },
   },
   { timestamps: true },
