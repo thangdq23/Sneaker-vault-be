@@ -37,3 +37,23 @@ export const loginSchema = {
     password: z.string().min(1, "Password is required"),
   }),
 };
+
+export const forgotPasswordSchema = {
+  body: z.object({
+    email: z.string().trim().email("Định dạng email không hợp lệ"),
+  }),
+};
+
+export const resetPasswordSchema = {
+  body: z.object({
+    token: z.string().min(1, "Token reset mật khẩu là bắt buộc"),
+    newPassword: z
+      .string()
+      .min(6, "Mật khẩu phải từ 6 ký tự")
+      .max(20, "Mật khẩu tối đa 20 ký tự")
+      .regex(
+        /^(?=.{6,20}$)(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?!.*\s).+$/,
+        "Mật khẩu phải bao gồm ít nhất 1 chữ hoa, 1 chữ thường và 1 số"
+      ),
+  }),
+};
