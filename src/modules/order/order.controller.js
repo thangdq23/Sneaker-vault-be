@@ -17,7 +17,6 @@ export const createOrder = async (req, res, next) => {
     const orderItems = [];
     let totalAmount = 0;
 
-    // Validate stock and build order items
     for (const item of cart.items) {
       const product = item.product;
       if (!product) {
@@ -41,7 +40,7 @@ export const createOrder = async (req, res, next) => {
         return createError(
           res,
           400,
-          `Insufficient stock for product "${product.name}" (size ${item.size}). Only ${sizeItem.stock} items left in stock.`,
+          `Sản phẩm không đủ hàng tồn kho "${product.name}" (size ${item.size}). Chỉ còn ${sizeItem.stock} số lượng hàng còn lại trong kho.`,
         );
       }
 
@@ -81,7 +80,6 @@ export const createOrder = async (req, res, next) => {
       );
     }
 
-    // Clear cart
     cart.items = [];
     await cart.save();
 
