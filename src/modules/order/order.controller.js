@@ -64,7 +64,6 @@ export const createOrder = async (req, res, next) => {
       });
     }
 
-    // Create the order
     const order = await Order.create({
       user: userId,
       items: orderItems,
@@ -177,6 +176,9 @@ export const updateOrderStatus = async (req, res, next) => {
           );
         }
         order.status = newStatus;
+        if (newStatus === "delivered") {
+          order.paymentStatus = "paid";
+        }
       }
     }
 
@@ -208,7 +210,6 @@ export const cancelOrder = async (req, res, next) => {
       return createError(res, 400, "Đơn hàng đã được hủy trước đó.");
     }
 
-    // Can only cancel if pending or confirmed / processing
     if (currentStatus !== "pending" && currentStatus !== "confirmed" && currentStatus !== "processing") {
       return createError(
         res,
@@ -245,7 +246,6 @@ export const cancelOrder = async (req, res, next) => {
     order.cancelledAt = new Date();
     await order.save();
 
-    // Restore stock to sizes
     for (const item of order.items) {
       await Product.updateOne(
         { _id: item.product, "sizes.size": item.size },
