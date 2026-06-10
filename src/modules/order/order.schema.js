@@ -11,7 +11,7 @@ export const createOrderSchema = {
 export const updateOrderStatusSchema = {
   body: z
     .object({
-      status: z.enum(["pending", "processing", "shipped", "delivered", "cancelled", "returned"]).optional(),
+      status: z.enum(["pending", "confirmed", "shipping", "delivered", "cancelled", "returned", "processing", "shipped"]).optional(),
       paymentStatus: z.enum(["pending", "paid", "failed"]).optional(),
     })
     .refine((data) => data.status !== undefined || data.paymentStatus !== undefined, {

@@ -1,6 +1,7 @@
 import Order from "./order.model.js";
 import Cart from "../cart/cart.model.js";
 import Product from "../product/product.model.js";
+import User from "../user/user.model.js";
 import { queryBuilder } from "../../shared/utils/queryBuilder.js";
 import createError from "../../shared/utils/createError.js";
 
@@ -109,7 +110,9 @@ export const getMyOrders = async (req, res, next) => {
 
 export const getOrderById = async (req, res, next) => {
   try {
-    const order = await Order.findById(req.params.id).populate("items.product");
+    const order = await Order.findById(req.params.id)
+      .populate("items.product", "name price images brand sku")
+      .populate("user", "name email");
     if (!order) {
       return createError(res, 404, "Order not found.");
     }
@@ -124,6 +127,19 @@ export const getOrderById = async (req, res, next) => {
   }
 };
 
+const getStatusText = (status) => {
+  const map = {
+    pending: "Chờ xử lý",
+    confirmed: "Đã xác nhận",
+    processing: "Đã xác nhận",
+    shipping: "Đang giao",
+    shipped: "Đang giao",
+    delivered: "Hoàn thành",
+    cancelled: "Đã hủy",
+  };
+  return map[status] || status;
+};
+
 export const updateOrderStatus = async (req, res, next) => {
   try {
     const { status, paymentStatus } = req.body;
@@ -132,11 +148,112 @@ export const updateOrderStatus = async (req, res, next) => {
       return createError(res, 404, "Order not found.");
     }
 
-    if (status) order.status = status;
-    if (paymentStatus) order.paymentStatus = paymentStatus;
+    if (status) {
+      const currentStatus = order.status;
+      const newStatus = status;
+
+      if (currentStatus !== newStatus) {
+        const validTransitions = {
+          pending: ["confirmed", "cancelled"],
+          confirmed: ["shipping", "cancelled"],
+          processing: ["shipping", "shipped", "delivered", "cancelled"],
+          shipping: ["delivered"],
+          shipped: ["delivered"],
+          delivered: [],
+          cancelled: [],
+        };
+
+        const allowed = validTransitions[currentStatus] || [];
+        if (!allowed.includes(newStatus)) {
+          return createError(
+            res,
+            400,
+            `Không thể chuyển trạng thái đơn hàng từ "${getStatusText(currentStatus)}" sang "${getStatusText(newStatus)}".`
+          );
+        }
+        order.status = newStatus;
+      }
+    }
+
+    if (paymentStatus) {
+      order.paymentStatus = paymentStatus;
+    }
 
     await order.save();
-    res.json({ message: "Order status updated successfully.", order });
+    res.json({ message: "Cập nhật trạng thái đơn hàng thành công.", order });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const cancelOrder = async (req, res, next) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) {
+      return createError(res, 404, "Order not found.");
+    }
+
+    // Auth check: admin or order owner
+    if (order.user.toString() !== req.user.id && req.user.role !== "admin") {
+      return createError(res, 403, "Access denied. You do not own this order.");
+    }
+
+    const currentStatus = order.status;
+    if (currentStatus === "cancelled") {
+      return createError(res, 400, "Đơn hàng đã được hủy trước đó.");
+    }
+
+    // Can only cancel if pending or confirmed / processing
+    if (currentStatus !== "pending" && currentStatus !== "confirmed" && currentStatus !== "processing") {
+      return createError(
+        res,
+        400,
+        `Không thể hủy đơn hàng ở trạng thái "${getStatusText(currentStatus)}".`
+      );
+    }
+
+    const { cancelReason, cancelNote } = req.body;
+
+    if (!cancelReason) {
+      return createError(res, 400, "Vui lòng chọn lý do hủy đơn hàng.");
+    }
+
+    const validReasons = [
+      "Khách đổi ý",
+      "Không liên lạc được khách",
+      "Hết hàng",
+      "Sai thông tin giao hàng",
+      "Khác",
+    ];
+
+    if (!validReasons.includes(cancelReason)) {
+      return createError(res, 400, "Lý do hủy đơn hàng không hợp lệ.");
+    }
+
+    if (cancelReason === "Khác" && (!cancelNote || !cancelNote.trim())) {
+      return createError(res, 400, "Vui lòng nhập ghi chú bổ sung khi chọn lý do Khác.");
+    }
+
+    order.status = "cancelled";
+    order.cancelReason = cancelReason;
+    order.cancelNote = cancelNote || null;
+    order.cancelledAt = new Date();
+    await order.save();
+
+    // Restore stock to sizes
+    for (const item of order.items) {
+      await Product.updateOne(
+        { _id: item.product, "sizes.size": item.size },
+        {
+          $inc: {
+            "sizes.$.stock": item.quantity,
+            stock: item.quantity,
+          },
+        }
+      );
+    }
+
+    res.json({ message: "Hủy đơn hàng thành công và đã hoàn lại tồn kho.", order });
   } catch (error) {
     next(error);
   }
@@ -144,14 +261,50 @@ export const updateOrderStatus = async (req, res, next) => {
 
 export const getAllOrders = async (req, res, next) => {
   try {
-    const result = await queryBuilder(Order, req.query, {
-      populate: [
-        { path: "items.product", select: "name price images brand" },
-        { path: "user", select: "name email" },
-      ],
-    });
+    const { page = 1, limit = 12, status, search, sort = "createdAt", order = "desc" } = req.query;
+    const queryConditions = {};
 
-    res.json(result);
+    if (status && status !== "all") {
+      queryConditions.status = status;
+    }
+
+    if (search) {
+      const searchRegex = new RegExp(search, "i");
+      const users = await User.find({ name: searchRegex }).select("_id");
+      const userIds = users.map((u) => u._id);
+
+      queryConditions.$or = [
+        { orderCode: searchRegex },
+        { phone: searchRegex },
+      ];
+
+      if (userIds.length > 0) {
+        queryConditions.$or.push({ user: { $in: userIds } });
+      }
+    }
+
+    const pageNum = parseInt(page, 10);
+    const limitNum = parseInt(limit, 10);
+    const skip = (pageNum - 1) * limitNum;
+    const sortOrder = order === "desc" ? -1 : 1;
+
+    const total = await Order.countDocuments(queryConditions);
+    const data = await Order.find(queryConditions)
+      .populate("items.product", "name price images brand sku")
+      .populate("user", "name email")
+      .sort({ [sort]: sortOrder })
+      .skip(skip)
+      .limit(limitNum);
+
+    res.json({
+      data,
+      meta: {
+        total,
+        page: pageNum,
+        limit: limitNum,
+        totalPages: Math.ceil(total / limitNum),
+      },
+    });
   } catch (error) {
     next(error);
   }
