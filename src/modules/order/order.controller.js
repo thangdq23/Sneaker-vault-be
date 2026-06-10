@@ -8,6 +8,11 @@ import createError from "../../shared/utils/createError.js";
 export const createOrder = async (req, res, next) => {
   try {
     const userId = req.user.id;
+    const user = await User.findById(userId);
+    if (!user || user.isActive === false) {
+      return createError(res, 403, "Tài khoản của bạn đã bị khóa. Không thể thực hiện đặt hàng.");
+    }
+
     const { shippingAddress, phone, paymentMethod } = req.body;
 
     const cart = await Cart.findOne({ user: userId }).populate("items.product");

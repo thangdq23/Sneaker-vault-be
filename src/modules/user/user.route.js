@@ -9,6 +9,9 @@ import {
   deleteAddress,
   setDefaultAddress,
   uploadAvatar,
+  getUserById,
+  blockUser,
+  unblockUser,
 } from "./user.controller.js";
 import { authenticateToken, authorizeRole } from "../../shared/middlewares/auth.middleware.js";
 import { validateRequest } from "../../shared/middlewares/validate.middleware.js";
@@ -63,5 +66,8 @@ routerUser.post(
   uploadAvatar,
 );
 routerUser.get("/", authenticateToken, authorizeRole("admin"), getAllUsers);
+routerUser.get("/:id", authenticateToken, authorizeRole("admin"), getUserById);
+routerUser.patch("/:id/block", authenticateToken, authorizeRole("admin"), blockUser);
+routerUser.patch("/:id/unblock", authenticateToken, authorizeRole("admin"), unblockUser);
 
 export default routerUser;

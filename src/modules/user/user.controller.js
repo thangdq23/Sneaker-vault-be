@@ -1,4 +1,5 @@
 import User from "./user.model.js";
+import Order from "../order/order.model.js";
 import createError from "../../shared/utils/createError.js";
 import { queryBuilder } from "../../shared/utils/queryBuilder.js";
 import bcryptjs from "bcryptjs";
@@ -22,6 +23,10 @@ export const updateProfile = async (req, res, next) => {
     const user = await User.findById(req.user.id);
     if (!user) {
       return createError(res, 404, "User not found.");
+    }
+
+    if (user.isActive === false) {
+      return createError(res, 403, "Tài khoản của bạn đã bị khóa. Không thể cập nhật thông tin.");
     }
 
     if (name !== undefined) user.name = name;
@@ -55,6 +60,10 @@ export const changePassword = async (req, res, next) => {
       return createError(res, 404, "User not found.");
     }
 
+    if (user.isActive === false) {
+      return createError(res, 403, "Tài khoản của bạn đã bị khóa. Không thể thực hiện hành động này.");
+    }
+
     const isPasswordValid = await bcryptjs.compare(currentPassword, user.password);
     if (!isPasswordValid) {
       return createError(res, 400, "Mật khẩu hiện tại không chính xác.");
@@ -77,6 +86,10 @@ export const addAddress = async (req, res, next) => {
     const user = await User.findById(req.user.id);
     if (!user) {
       return createError(res, 404, "User not found.");
+    }
+
+    if (user.isActive === false) {
+      return createError(res, 403, "Tài khoản của bạn đã bị khóa. Không thể thực hiện hành động này.");
     }
 
     const shouldBeDefault = isDefault || user.addresses.length === 0;
@@ -111,6 +124,10 @@ export const updateAddress = async (req, res, next) => {
     const user = await User.findById(req.user.id);
     if (!user) {
       return createError(res, 404, "User not found.");
+    }
+
+    if (user.isActive === false) {
+      return createError(res, 403, "Tài khoản của bạn đã bị khóa. Không thể thực hiện hành động này.");
     }
 
     const address = user.addresses.id(addressId);
@@ -154,6 +171,10 @@ export const deleteAddress = async (req, res, next) => {
       return createError(res, 404, "User not found.");
     }
 
+    if (user.isActive === false) {
+      return createError(res, 403, "Tài khoản của bạn đã bị khóa. Không thể thực hiện hành động này.");
+    }
+
     const address = user.addresses.id(addressId);
     if (!address) {
       return createError(res, 404, "Address not found.");
@@ -183,6 +204,10 @@ export const setDefaultAddress = async (req, res, next) => {
     const user = await User.findById(req.user.id);
     if (!user) {
       return createError(res, 404, "User not found.");
+    }
+
+    if (user.isActive === false) {
+      return createError(res, 403, "Tài khoản của bạn đã bị khóa. Không thể thực hiện hành động này.");
     }
 
     const address = user.addresses.id(addressId);
@@ -231,20 +256,104 @@ export const uploadAvatar = async (req, res, next) => {
 
 export const getAllUsers = async (req, res, next) => {
   try {
-    const result = await queryBuilder(User, {
-      ...req.query,
-      searchFields: ["name", "email"],
-    });
+    const { page = 1, limit = 10, search } = req.query;
+    const queryConditions = {};
 
-    if (result.data) {
-      result.data = result.data.map((user) => {
-        const u = user.toObject();
-        delete u.password;
-        return u;
-      });
+    if (search) {
+      const searchRegex = new RegExp(search, "i");
+      queryConditions.$or = [
+        { name: searchRegex },
+        { email: searchRegex },
+        { phone: searchRegex },
+      ];
     }
 
-    res.json(result);
+    const pageNum = parseInt(page, 10);
+    const limitNum = parseInt(limit, 10);
+    const skip = (pageNum - 1) * limitNum;
+
+    const total = await User.countDocuments(queryConditions);
+    const users = await User.find(queryConditions)
+      .select("-password")
+      .skip(skip)
+      .limit(limitNum)
+      .sort({ createdAt: -1 });
+
+    res.json({
+      data: users,
+      meta: {
+        total,
+        page: pageNum,
+        limit: limitNum,
+        totalPages: Math.ceil(total / limitNum),
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getUserById = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const user = await User.findById(id).select("-password");
+    if (!user) {
+      return createError(res, 404, "User not found.");
+    }
+
+    const orders = await Order.find({ user: id })
+      .populate("items.product", "name price images brand sku")
+      .sort({ createdAt: -1 });
+
+    const totalOrders = orders.length;
+    const totalSpent = orders
+      .filter((o) => o.status !== "cancelled")
+      .reduce((sum, o) => sum + o.totalAmount, 0);
+
+    res.json({
+      user,
+      totalOrders,
+      totalSpent,
+      orders,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const blockUser = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    if (id === req.user.id) {
+      return createError(res, 400, "Bạn không thể tự khóa tài khoản của chính mình.");
+    }
+
+    const user = await User.findById(id);
+    if (!user) {
+      return createError(res, 404, "User not found.");
+    }
+
+    user.isActive = false;
+    await user.save();
+
+    res.json({ message: "Khóa tài khoản người dùng thành công.", user });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const unblockUser = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const user = await User.findById(id);
+    if (!user) {
+      return createError(res, 404, "User not found.");
+    }
+
+    user.isActive = true;
+    await user.save();
+
+    res.json({ message: "Mở khóa tài khoản người dùng thành công.", user });
   } catch (error) {
     next(error);
   }

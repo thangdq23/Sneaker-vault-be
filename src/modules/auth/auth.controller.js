@@ -56,6 +56,10 @@ export const login = async (req, res, next) => {
       return createError(res, 401, "Invalid email or password.");
     }
 
+    if (user.isActive === false) {
+      return createError(res, 403, "Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên.");
+    }
+
     const isPasswordValid = await bcryptjs.compare(password, user.password);
     if (!isPasswordValid) {
       return createError(res, 401, "Invalid email or password.");
