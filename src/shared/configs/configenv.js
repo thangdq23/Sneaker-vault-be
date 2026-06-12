@@ -17,4 +17,8 @@ export const configEnv = {
   SMTP_PASS: process.env.SMTP_PASS,
   FROM_EMAIL: process.env.FROM_EMAIL || "Sneaker Vault <noreply@sneakervault.com>",
   CLIENT_URL: process.env.CLIENT_URL || "http://localhost:5173",
+  VNPAY_TMN_CODE: process.env.VNPAY_TMN_CODE,
+  VNPAY_HASH_SECRET: process.env.VNPAY_HASH_SECRET,
+  VNPAY_URL: process.env.VNPAY_URL,
 };
+
