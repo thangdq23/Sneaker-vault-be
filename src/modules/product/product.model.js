@@ -74,6 +74,17 @@ const productSchema = new mongoose.Schema(
         message: "salePrice is required and must be >= 0 when isSale is true",
       },
     },
+    rating: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 5,
+    },
+    numReviews: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
   },
   { 
     timestamps: true,
