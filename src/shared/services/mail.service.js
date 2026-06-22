@@ -94,6 +94,16 @@ export const sendOrderConfirmationEmail = async (orderId) => {
       ? "Thanh toán khi nhận hàng (COD)"
       : "Thanh toán trực tuyến qua VNPAY Gateway";
 
+    const paymentStatusText = order.paymentStatus === "paid"
+      ? "Đã thanh toán"
+      : order.paymentMethod === "cod"
+        ? "Chưa thanh toán (COD)"
+        : "Chưa thanh toán";
+
+    const orderStatusText = order.status === "confirmed"
+      ? "Đã xác nhận"
+      : "Chờ xác nhận";
+
     const emailHtml = `
       <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e4e4e7; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
         <!-- Header -->
@@ -157,15 +167,31 @@ export const sendOrderConfirmationEmail = async (orderId) => {
 
           <!-- Info Details Cards -->
           <div style="border-top: 1px solid #f4f4f5; padding-top: 24px; margin-bottom: 32px;">
-            <div style="margin-bottom: 20px;">
-              <div style="font-size: 12px; text-transform: uppercase; color: #71717a; font-weight: 600; letter-spacing: 0.5px;">Phương thức thanh toán</div>
-              <div style="font-size: 14px; color: #09090b; font-weight: 600; margin-top: 4px;">${paymentMethodText}</div>
-            </div>
-            <div>
-              <div style="font-size: 12px; text-transform: uppercase; color: #71717a; font-weight: 600; letter-spacing: 0.5px;">Địa chỉ giao hàng</div>
-              <div style="font-size: 14px; color: #09090b; line-height: 1.5; margin-top: 4px;">
-                Tên/SĐT: ${order.phone}<br/>
-                Địa chỉ: ${order.shippingAddress}
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 16px;">
+              <tr>
+                <td style="width: 50%; padding-bottom: 16px; vertical-align: top;">
+                  <div style="font-size: 11px; text-transform: uppercase; color: #71717a; font-weight: 600; letter-spacing: 0.5px;">Phương thức thanh toán</div>
+                  <div style="font-size: 13px; color: #09090b; font-weight: 600; margin-top: 4px;">${paymentMethodText}</div>
+                </td>
+                <td style="width: 50%; padding-bottom: 16px; vertical-align: top;">
+                  <div style="font-size: 11px; text-transform: uppercase; color: #71717a; font-weight: 600; letter-spacing: 0.5px;">Trạng thái thanh toán</div>
+                  <div style="font-size: 13px; color: ${order.paymentStatus === "paid" ? "#10b981" : "#f59e0b"}; font-weight: 700; margin-top: 4px;">${paymentStatusText}</div>
+                </td>
+              </tr>
+              <tr>
+                <td style="width: 50%; padding-bottom: 16px; vertical-align: top;">
+                  <div style="font-size: 11px; text-transform: uppercase; color: #71717a; font-weight: 600; letter-spacing: 0.5px;">Trạng thái đơn hàng</div>
+                  <div style="font-size: 13px; color: ${order.status === "confirmed" ? "#10b981" : "#f59e0b"}; font-weight: 700; margin-top: 4px;">${orderStatusText}</div>
+                </td>
+                <td style="width: 50%; padding-bottom: 16px; vertical-align: top;"></td>
+              </tr>
+            </table>
+            
+            <div style="border-top: 1px dashed #e4e4e7; padding-top: 16px;">
+              <div style="font-size: 11px; text-transform: uppercase; color: #71717a; font-weight: 600; letter-spacing: 0.5px;">Địa chỉ giao hàng</div>
+              <div style="font-size: 13px; color: #09090b; line-height: 1.5; margin-top: 4px;">
+                <strong>Người nhận/SĐT:</strong> ${order.phone}<br/>
+                <strong>Địa chỉ:</strong> ${order.shippingAddress}
               </div>
             </div>
           </div>
