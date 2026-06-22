@@ -66,6 +66,12 @@ export const createOrder = async (req, res, next) => {
       });
     }
 
+    if (paymentMethod === "card") {
+      if (!configEnv.VNPAY_HASH_SECRET || !configEnv.VNPAY_TMN_CODE || !configEnv.VNPAY_URL) {
+        return createError(res, 400, "Cấu hình thanh toán VNPAY trên máy chủ chưa hoàn tất. Vui lòng liên hệ quản trị viên hoặc chọn phương thức COD.");
+      }
+    }
+
     const order = await Order.create({
       user: userId,
       items: orderItems,
@@ -347,6 +353,9 @@ export const getAllOrders = async (req, res, next) => {
 export const vnpayReturn = async (req, res, next) => {
   try {
     const queryParams = req.query;
+    if (!configEnv.VNPAY_HASH_SECRET) {
+      return res.status(500).json({ success: false, message: "Cấu hình VNPAY_HASH_SECRET bị thiếu trên máy chủ." });
+    }
     const isValidSignature = verifyVNPAYSignature(queryParams, configEnv.VNPAY_HASH_SECRET);
     if (!isValidSignature) {
       return res.status(400).json({ success: false, message: "Invalid signature" });
@@ -405,6 +414,9 @@ export const vnpayReturn = async (req, res, next) => {
 export const vnpayIpn = async (req, res, next) => {
   try {
     const queryParams = req.query;
+    if (!configEnv.VNPAY_HASH_SECRET) {
+      return res.status(200).json({ RspCode: "99", Message: "Server config error: VNPAY_HASH_SECRET is missing" });
+    }
     const isValidSignature = verifyVNPAYSignature(queryParams, configEnv.VNPAY_HASH_SECRET);
     if (!isValidSignature) {
       return res.status(200).json({ RspCode: "97", Message: "Invalid signature" });
