@@ -15,8 +15,13 @@ export const sendEmail = async (options) => {
         },
       });
 
+      const fromAddress =
+        FROM_EMAIL && !FROM_EMAIL.includes("noreply@sneakervault.com")
+          ? FROM_EMAIL
+          : `Sneaker Vault <${SMTP_USER}>`;
+
       const message = {
-        from: FROM_EMAIL,
+        from: fromAddress,
         to: options.email,
         subject: options.subject,
         html: options.html,
