@@ -6,6 +6,7 @@ import { queryBuilder } from "../../shared/utils/queryBuilder.js";
 import createError from "../../shared/utils/createError.js";
 import { createVNPAYPaymentUrl, verifyVNPAYSignature } from "../../shared/utils/vnpay.js";
 import { configEnv } from "../../shared/configs/configenv.js";
+import { sendOrderConfirmationEmail, sendOrderStatusEmail } from "../../shared/services/mail.service.js";
 
 export const createOrder = async (req, res, next) => {
   try {
@@ -124,6 +125,7 @@ export const createOrder = async (req, res, next) => {
       });
     } else {
       res.status(201).json(order);
+      void sendOrderConfirmationEmail(order._id);
     }
   } catch (error) {
     next(error);
@@ -223,6 +225,11 @@ export const updateOrderStatus = async (req, res, next) => {
     }
 
     await order.save();
+    
+    if (status) {
+      void sendOrderStatusEmail(order._id, status);
+    }
+
     res.json({ message: "Cập nhật trạng thái đơn hàng thành công.", order });
   } catch (error) {
     next(error);
@@ -280,6 +287,7 @@ export const cancelOrder = async (req, res, next) => {
     order.cancelNote = cancelNote || null;
     order.cancelledAt = new Date();
     await order.save();
+    void sendOrderStatusEmail(order._id, "cancelled");
 
     for (const item of order.items) {
       await Product.updateOne(
@@ -382,6 +390,8 @@ export const vnpayReturn = async (req, res, next) => {
         await cart.save();
       }
 
+      void sendOrderConfirmationEmail(order._id);
+
       return res.status(200).json({ success: true, order });
     } else {
       if (order.status !== "cancelled") {
@@ -449,6 +459,8 @@ export const vnpayIpn = async (req, res, next) => {
         cart.items = [];
         await cart.save();
       }
+
+      void sendOrderConfirmationEmail(order._id);
     } else {
       order.paymentStatus = "failed";
       order.status = "cancelled";
