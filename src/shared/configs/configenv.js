@@ -20,5 +20,6 @@ export const configEnv = {
   VNPAY_TMN_CODE: process.env.VNPAY_TMN_CODE,
   VNPAY_HASH_SECRET: process.env.VNPAY_HASH_SECRET,
   VNPAY_URL: process.env.VNPAY_URL,
+  RESEND_API_KEY: process.env.RESEND_API_KEY,
 };
 
