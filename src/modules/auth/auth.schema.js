@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 const passwordRegex = /^(?=.{6,20}$)(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?!.*\s).+$/;
-const nameRegex = /^[A-Za-zÀ-ÖØ-öø-ÿ]+(?:[\s'-][A-Za-zÀ-ÖØ-öø-ÿ]+)*\s*$/;
+const nameRegex = /^[\p{L}]+(?:[\s'-][\p{L}]+)*\s*$/u;
 
 export const registerSchema = {
   body: z
