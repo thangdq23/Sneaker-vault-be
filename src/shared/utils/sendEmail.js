@@ -7,10 +7,16 @@ export const sendEmail = async (options) => {
   // 1. Use Resend HTTP API if RESEND_API_KEY is defined
   if (RESEND_API_KEY) {
     try {
-      const fromAddress =
-        FROM_EMAIL && !FROM_EMAIL.includes("noreply@sneakervault.com")
-          ? FROM_EMAIL
-          : "Sneaker Vault <onboarding@resend.dev>";
+      let fromAddress = "Sneaker Vault <onboarding@resend.dev>";
+      if (FROM_EMAIL) {
+        const emailMatch = FROM_EMAIL.match(/<([^>]+)>/);
+        const emailStr = emailMatch ? emailMatch[1] : FROM_EMAIL;
+        const domain = emailStr.split("@")[1];
+        const freeDomains = ["gmail.com", "yahoo.com", "outlook.com", "hotmail.com", "sneakervault.com"];
+        if (domain && !freeDomains.includes(domain.toLowerCase())) {
+          fromAddress = FROM_EMAIL;
+        }
+      }
 
       console.log(`Sending email via Resend API to: ${options.email} (from: ${fromAddress})`);
 
