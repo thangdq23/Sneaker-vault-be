@@ -2,6 +2,14 @@ import dotenv from "dotenv";
 
 dotenv.config({});
 
+console.log("Environment variables loaded:", {
+  hasResendKey: !!process.env.RESEND_API_KEY,
+  hasSmtpHost: !!process.env.SMTP_HOST,
+  hasSmtpUser: !!process.env.SMTP_USER,
+  hasSmtpPass: !!process.env.SMTP_PASS,
+  fromEmail: process.env.FROM_EMAIL,
+});
+
 export const configEnv = {
   MONGO_URI: process.env.MONGO_URI,
   JWT_SECRET: process.env.JWT_SECRET,
