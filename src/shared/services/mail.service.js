@@ -11,7 +11,14 @@ const formatVnd = (amount) => {
 const formatDate = (dateString) => {
   if (!dateString) return "";
   const d = new Date(dateString);
-  return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+  // Shift to Vietnam timezone (GMT+7)
+  const vnTime = new Date(d.getTime() + 7 * 60 * 60 * 1000);
+  const day = vnTime.getUTCDate().toString().padStart(2, '0');
+  const month = (vnTime.getUTCMonth() + 1).toString().padStart(2, '0');
+  const year = vnTime.getUTCFullYear();
+  const hour = vnTime.getUTCHours().toString().padStart(2, '0');
+  const minute = vnTime.getUTCMinutes().toString().padStart(2, '0');
+  return `${day}/${month}/${year} ${hour}:${minute}`;
 };
 
 // Base layout styles
