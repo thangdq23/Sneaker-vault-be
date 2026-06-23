@@ -124,7 +124,7 @@ export const forgotPassword = async (req, res, next) => {
       </div>
     `;
 
-    await sendEmail({
+    void sendEmail({
       email: user.email,
       subject: "Đặt lại mật khẩu của bạn - Sneaker Vault",
       html,

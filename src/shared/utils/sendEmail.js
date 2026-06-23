@@ -51,6 +51,9 @@ export const sendEmail = async (options) => {
           user: SMTP_USER,
           pass: SMTP_PASS,
         },
+        connectionTimeout: 5000, // 5s connection timeout
+        greetingTimeout: 5000,   // 5s greeting timeout
+        socketTimeout: 5000,     // 5s socket timeout
       });
 
       const fromAddress =
